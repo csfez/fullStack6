@@ -88,7 +88,49 @@ app.get('/users/:id', (req, res) => {
   });
 });
 
-app.get('/todos/:userId', (req, res) => {
+app.post('/users', (req, res) => {
+  const user = req.body; // Récupérer les données de l'utilisateur depuis la requête
+  
+  connection.query('INSERT INTO users SET ?', user, (err, result) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de l\'ajout de l\'utilisateur');
+    } else {
+      const userId = result.insertId; // ID de l'utilisateur ajouté
+      res.status(201).send(`Utilisateur ajouté avec l'ID : ${userId}`);
+    }
+  });
+});
+
+app.put('/users/:id', (req, res) => {
+  const userId = req.params.id;
+  const updatedUser = req.body; // Récupérer les données mises à jour de l'utilisateur depuis la requête
+  
+  connection.query('UPDATE users SET ? WHERE id = ?', [updatedUser, userId], (err, result) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la mise à jour de l\'utilisateur');
+    } else {
+      res.send('Utilisateur mis à jour avec succès');
+    }
+  });
+});
+
+app.delete('/users/:id', (req, res) => {
+  const userId = req.params.id;
+  
+  connection.query('DELETE FROM users WHERE id = ?', userId, (err, result) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la suppression de l\'utilisateur');
+    } else {
+      res.send('Utilisateur supprimé avec succès');
+    }
+  });
+});
+
+
+app.get('/:userId/todos', (req, res) => {
   const userId = req.params.userId;
 
   connection.query('SELECT * FROM todos WHERE userId = ?', [userId], (err, rows) => {
@@ -111,10 +153,10 @@ app.get('/todos/:userId', (req, res) => {
   });
 });
 
-app.get('/comments/:userId', (req, res) => {
+app.get('/:userId/comments', (req, res) => {
   const userId = req.params.userId;
 
-  connection.query('SELECT * FROM comments WHERE id = ?', [userId], (err, rows) => {
+  connection.query('SELECT * FROM comments WHERE postId = ?', [userId], (err, rows) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
       res.status(500).send('Erreur lors de la récupération des comments');
@@ -137,10 +179,10 @@ app.get('/comments/:userId', (req, res) => {
 });
 
 
-app.get('/posts/:id', (req, res) => {
+app.get('/:id/posts', (req, res) => {
   const userId = req.params.id;
 
-  connection.query('SELECT * FROM posts WHERE id = ?', [userId], (err, rows) => {
+  connection.query('SELECT * FROM posts WHERE userId = ?', [userId], (err, rows) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
       res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
