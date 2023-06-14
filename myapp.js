@@ -1,5 +1,7 @@
 const https = require('https');
 const mysql = require('mysql2');
+const express = require('express')
+const app = express()
 
 // Fonction pour récupérer les données JSON depuis l'URL
 function getJSONData(url) {
@@ -25,34 +27,145 @@ function getJSONData(url) {
   });
 }
 
-const connection = mysql.createConnection({
+const dbConfig = {
   host: 'localhost',
   user: 'root',
   password: 'Motdepasse17',
   database: 'mydb',
+};
+
+const connection = mysql.createConnection(dbConfig);
+
+connection.connect(function(err) {
+  if (err) {
+    console.error('Erreur lors de la connexion à la base de données :', err);
+  } else {
+    console.log('Connecté à la base de données MySQL');
+  }
 });
 
-    connection.connect(function(err) {
-      if (err) throw err;
-      console.log('Connected to MySQL!');
-    
-      const table='todos'
+      // const table='todos'
 
-      connection.query(`SELECT * FROM ${table} WHERE userId = 1 AND completed = 1`, (err, rows) => {
-        if (err) {
-          console.error('Erreur lors de l\'exécution de la requête :', err);
-        } else {
-          // Traitez les résultats
-          rows.forEach((todo) => {
-            console.log('ID :', todo.id);
-            console.log('title :', todo.title);
-            console.log('Completed :', todo.completed);
+      // connection.query(`SELECT * FROM ${table} WHERE userId = 1 AND completed = 1`, (err, rows) => {
+      //   if (err) {
+      //     console.error('Erreur lors de l\'exécution de la requête :', err);
+      //   } else {
+      //     // Traitez les résultats
+      //     rows.forEach((todo) => {
+      //       console.log('ID :', todo.id);
+      //       console.log('title :', todo.title);
+      //       console.log('Completed :', todo.completed);
 
             
-          });
+      //     });
+      //   }
+      //   connection.end(); 
+      // });
+//});
+
+app.get('/users/:id', (req, res) => {
+  const userId = req.params.id;
+
+  connection.query('SELECT * FROM users WHERE id = ?', [userId], (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
+    } else {
+      if (rows.length === 0) {
+        res.status(404).send('User no found');
+      } else {
+        const user = rows[0]; // Première ligne de résultats
+        const userInfo = {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+        };
+        res.json(userInfo);
+      }
+    }
+    // connection.end();
+  });
+});
+
+app.get('/todos/:userId', (req, res) => {
+  const userId = req.params.userId;
+
+  connection.query('SELECT * FROM todos WHERE id = ?', [userId], (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la récupération des todos');
+    } else {
+      if (rows.length === 0) {
+        res.status(404).send('Aucun todos trouvé');
+      } else {
+        const todos = rows.map(todo => ({
+          id: todo.id,
+          title: todo.title,
+          completed: todo.completed
+        }));
+        res.json(todos);
+      }
+    }
+    // connection.end();
+  });
+});
+
+app.get('/comments/:userId', (req, res) => {
+  const userId = req.params.userId;
+
+  connection.query('SELECT * FROM comments WHERE id = ?', [userId], (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la récupération des comments');
+    } else {
+      if (rows.length === 0) {
+        res.status(404).send('No comments found');
+      } else {
+        const comments = rows.map(comment => ({
+          id: comment.id,
+          postId:comment.postId,
+          name: comment.name,
+          email: comment.email,
+          body:comment.body
+        }));
+        res.json(comments);
+      }
+    }
+    // connection.end();
+  });
+});
+
+
+app.get('/posts/:id', (req, res) => {
+  const userId = req.params.id;
+
+  connection.query('SELECT * FROM posts WHERE id = ?', [userId], (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
+    } else {
+      if (rows.length === 0) {
+        res.status(404).send('posts no found');
+      }  else {
+        if (rows.length === 0) {
+          res.status(404).send('Aucun todos trouvé');
+        } else {
+          const posts = rows.map(post => ({
+            id: post.id,
+            title: post.title,
+            body: post.body,
+          }));
+          res.json(posts);
         }
-        connection.end(); 
-      });
+      }
+    }
+    // connection.end();
+  });
+});
+
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
 });
 
 // // Récupération des données JSON depuis les URLs
