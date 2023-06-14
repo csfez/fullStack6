@@ -91,7 +91,7 @@ app.get('/users/:id', (req, res) => {
 app.get('/todos/:userId', (req, res) => {
   const userId = req.params.userId;
 
-  connection.query('SELECT * FROM todos WHERE id = ?', [userId], (err, rows) => {
+  connection.query('SELECT * FROM todos WHERE userId = ?', [userId], (err, rows) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
       res.status(500).send('Erreur lors de la récupération des todos');
