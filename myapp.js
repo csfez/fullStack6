@@ -2,6 +2,7 @@ const https = require('https');
 const mysql = require('mysql2');
 const express = require('express')
 const app = express()
+const cors = require('cors');
 
 // Fonction pour récupérer les données JSON depuis l'URL
 function getJSONData(url) {
@@ -44,6 +45,10 @@ connection.connect(function(err) {
   }
 });
 
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));
+
       // const table='todos'
 
       // connection.query(`SELECT * FROM ${table} WHERE userId = 1 AND completed = 1`, (err, rows) => {
@@ -80,6 +85,11 @@ app.get('/users/:id', (req, res) => {
           name: user.name,
           username: user.username,
           email: user.email,
+          address:user.address,
+          phone:user.phone,
+          website:user.website,
+          company: user.company
+
         };
         res.json(userInfo);
       }
@@ -88,10 +98,10 @@ app.get('/users/:id', (req, res) => {
   });
 });
 
-app.post('/users', (req, res) => {
+app.post('/:table', (req, res) => {
   const user = req.body; // Récupérer les données de l'utilisateur depuis la requête
-  
-  connection.query('INSERT INTO users SET ?', user, (err, result) => {
+  const table=req.table;
+  connection.query('INSERT INTO ?? SET ?',[table,user] , (err, result) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
       res.status(500).send('Erreur lors de l\'ajout de l\'utilisateur');
@@ -128,6 +138,60 @@ app.delete('/users/:id', (req, res) => {
     }
   });
 });
+app.get('/:userid/posts', (req, res) => {
+  const userId = req.params.userid;
+
+  connection.query('SELECT * FROM posts WHERE userId = ?', [userId], (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
+    } else {
+      if (rows.length === 0) {
+        res.status(404).send('posts not found');
+      } else {
+        const posts = rows.map(post => ({
+          id: post.id,
+          title: post.title,
+          body: post.body,
+        }));
+        res.json(posts);
+      }
+    }
+    // connection.end();
+  });
+});
+
+
+
+app.get('/users_password', (req, res) => {
+  const userName = req.query.username;
+  const password = req.query.password;
+
+  connection.query('SELECT users.*, users_password.* FROM users INNER JOIN users_password ON users.username = ? AND users_password.password = ?', [  userName, password], (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
+    } else {
+      if (rows.length === 0) {
+        res.status(404).send('User not found');
+      } else {
+        const user = rows[0];
+        const userInfo = {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          address: user.address,
+          phone: user.phone,
+          website: user.website,
+          company: user.company
+        };
+        res.json(userInfo);
+      }
+    }
+  });
+});
+
 
 
 app.get('/:userId/todos', (req, res) => {
@@ -153,10 +217,58 @@ app.get('/:userId/todos', (req, res) => {
   });
 });
 
-app.get('/:userId/comments', (req, res) => {
-  const userId = req.params.userId;
+app.get('/todos', (req, res) => {
+  // const userId = req.params.userId;
 
-  connection.query('SELECT * FROM comments WHERE postId = ?', [userId], (err, rows) => {
+  connection.query('SELECT * FROM todos', (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la récupération des todos');
+    } else {
+      if (rows.length === 0) {
+        res.status(404).send('Aucun todos trouvé');
+      } else {
+        const todos = rows.map(todo => ({
+          id: todo.id,
+          title: todo.title,
+          completed: todo.completed
+        }));
+        res.json(todos);
+      }
+    }
+    // connection.end();
+  });
+});
+
+
+app.get('/posts/:postid/comments', (req, res) => {
+  const postId = req.params.postid;
+
+  connection.query('SELECT * FROM comments WHERE postId = ?', [postId], (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de l\'exécution de la requête :', err);
+      res.status(500).send('Erreur lors de la récupération des comments');
+    } else {
+      if (rows.length === 0) {
+        res.status(404).send('No comments found');
+      } else {
+        const comments = rows.map(comment => ({
+          id: comment.id,
+          postId:comment.postId,
+          name: comment.name,
+          email: comment.email,
+          body:comment.body
+        }));
+        res.json(comments);
+      }
+    }
+    // connection.end();
+  });
+});
+
+app.get('/comments', (req, res) => {
+
+  connection.query('SELECT * FROM comments', (err, rows) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
       res.status(500).send('Erreur lors de la récupération des comments');
@@ -179,34 +291,32 @@ app.get('/:userId/comments', (req, res) => {
 });
 
 
-app.get('/:id/posts', (req, res) => {
-  const userId = req.params.id;
 
-  connection.query('SELECT * FROM posts WHERE userId = ?', [userId], (err, rows) => {
+app.get('/posts', (req, res) => {
+
+  connection.query('SELECT * FROM posts', (err, rows) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
-      res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
+      res.status(500).send('Erreur lors de la récupération des comments');
     } else {
       if (rows.length === 0) {
-        res.status(404).send('posts no found');
-      }  else {
-        if (rows.length === 0) {
-          res.status(404).send('Aucun todos trouvé');
-        } else {
-          const posts = rows.map(post => ({
-            id: post.id,
-            title: post.title,
-            body: post.body,
-          }));
-          res.json(posts);
-        }
+        res.status(404).send('No posts found');
+      } else {
+        const posts = rows.map(posts => ({
+          id: post.id,
+          postId:post.postId,
+          name: post.name,
+          email: post.email,
+          body:post.body
+        }));
+        res.json(posts);
       }
     }
     // connection.end();
   });
 });
 
-app.listen(3000, () => {
+app.listen(3001, () => {
   console.log('Server is running on port 3000');
 });
 
