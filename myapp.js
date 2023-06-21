@@ -49,6 +49,8 @@ app.use(cors({
   origin: 'http://localhost:3000'
 }));
 
+app.use(express.json());
+
       // const table='todos'
 
       // connection.query(`SELECT * FROM ${table} WHERE userId = 1 AND completed = 1`, (err, rows) => {
@@ -91,6 +93,7 @@ app.get('/users/:id', (req, res) => {
           company: user.company
 
         };
+        console.log(userInfo);
         res.json(userInfo);
       }
     }
@@ -98,19 +101,66 @@ app.get('/users/:id', (req, res) => {
   });
 });
 
-app.post('/:table', (req, res) => {
+//register
+
+app.post('/:username/users', (req, res) => {
   const user = req.body; // Récupérer les données de l'utilisateur depuis la requête
-  const table=req.table;
-  connection.query('INSERT INTO ?? SET ?',[table,user] , (err, result) => {
+  
+  // if (user) {
+  // Vérifier si le nom d'utilisateur est déjà utilisé
+  connection.query('SELECT * FROM users WHERE username = ?', [user.username], (err, rows) => {
     if (err) {
-      console.error('Erreur lors de l\'exécution de la requête :', err);
-      res.status(500).send('Erreur lors de l\'ajout de l\'utilisateur');
+      console.error('Error while executing the query: ', err);
+      res.status(500).send('Error checking username');
     } else {
-      const userId = result.insertId; // ID de l'utilisateur ajouté
-      res.status(201).send(`Utilisateur ajouté avec l'ID : ${userId}`);
+      if (rows.length > 0) {
+        res.status(400).send('Username is already in use');
+      } else {
+        const userToAdd = {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          address: user.address,
+          phone: user.phone,
+          website: user.website,
+          company: user.company
+        };
+
+        connection.query('INSERT INTO users SET ?', [userToAdd], (err, result) => {
+          if (err) {
+            console.error('Error while executing the query: ', err);
+            res.status(500).send('Error checking username');
+          } else {
+            const userId = result.insertId; // ID de l'utilisateur ajouté
+
+            // Insérer les informations dans la table users_password
+            const userData = {
+              id: userId,
+              username: user.username,
+              password: user.password
+            };
+
+            connection.query('INSERT INTO users_password SET ?', [userData], (err, result) => {
+              if (err) {
+                console.error('Error while executing the query: ', err);
+                res.status(500).send('Error checking username');
+              } else {
+                res.status(201).send(`User added with ID : ${userId}`);
+              }
+            });
+          }
+        });
+      }
     }
-  });
+  })
+  // } else {
+  //   res.status(400).send('Invalid user data');
+  // };
+  
 });
+
+
 
 app.put('/users/:id', (req, res) => {
   const userId = req.params.id;
@@ -118,26 +168,29 @@ app.put('/users/:id', (req, res) => {
   
   connection.query('UPDATE users SET ? WHERE id = ?', [updatedUser, userId], (err, result) => {
     if (err) {
-      console.error('Erreur lors de l\'exécution de la requête :', err);
-      res.status(500).send('Erreur lors de la mise à jour de l\'utilisateur');
+      console.error('Error while executing the query: ', err);
+      res.status(500).send('Error updating user');
     } else {
       res.send('Utilisateur mis à jour avec succès');
     }
   });
 });
 
-app.delete('/users/:id', (req, res) => {
-  const userId = req.params.id;
-  
-  connection.query('DELETE FROM users WHERE id = ?', userId, (err, result) => {
+//delete all tables
+app.delete('/:table/:id', (req, res) => {
+  const Id = req.params.id;
+  const table=req.params.table;
+  connection.query('DELETE FROM ?? WHERE id = ?', [table,Id], (err, result) => {
     if (err) {
-      console.error('Erreur lors de l\'exécution de la requête :', err);
-      res.status(500).send('Erreur lors de la suppression de l\'utilisateur');
+      console.error('Error while executing the query: ', err);
+      res.status(500).send(`Error deleting ${table} `);
     } else {
-      res.send('Utilisateur supprimé avec succès');
+      res.send(`${table} deleted successfully`);
     }
   });
 });
+
+//show posts
 app.get('/:userid/posts', (req, res) => {
   const userId = req.params.userid;
 
@@ -161,8 +214,35 @@ app.get('/:userid/posts', (req, res) => {
   });
 });
 
+//add post
+app.post('/:userId/posts', (req, res) => {
+  const userId = req.params.userId;
+  const post = req.body;
 
+  const postToAdd = {
+    title: post.title,
+    body: post.body,
+    userId: userId
+  };
 
+  connection.query('INSERT INTO posts SET ?', [postToAdd], (err, result) => {
+    if (err) {
+      console.error('Error while executing the query: ', err);
+      res.status(500).send('Error adding the post');
+    } else {
+      const postId = result.insertId;
+      const addedPost = {
+        id: postId,
+        title: post.title,
+        body: post.body,
+        userId: userId
+      };
+      res.status(201).json(addedPost);
+    }
+  });
+});
+
+//have the users and passwords
 app.get('/users_password', (req, res) => {
   const userName = req.query.username;
   const password = req.query.password;
@@ -186,6 +266,7 @@ app.get('/users_password', (req, res) => {
           website: user.website,
           company: user.company
         };
+        console.log(userInfo);
         res.json(userInfo);
       }
     }
@@ -193,7 +274,7 @@ app.get('/users_password', (req, res) => {
 });
 
 
-
+//show the todos
 app.get('/:userId/todos', (req, res) => {
   const userId = req.params.userId;
 
@@ -217,30 +298,95 @@ app.get('/:userId/todos', (req, res) => {
   });
 });
 
-app.get('/todos', (req, res) => {
-  // const userId = req.params.userId;
+//update todos
+app.put('/todos/:Id', (req, res) => {
+  const Id = req.params.Id;
+  const { completed } = req.body;
 
-  connection.query('SELECT * FROM todos', (err, rows) => {
-    if (err) {
-      console.error('Erreur lors de l\'exécution de la requête :', err);
-      res.status(500).send('Erreur lors de la récupération des todos');
-    } else {
-      if (rows.length === 0) {
-        res.status(404).send('Aucun todos trouvé');
+  connection.query(
+    'UPDATE todos SET completed = ? WHERE id = ?'
+    [completed, Id],
+    (err, result) => {
+      if (err) {
+        console.error('Erreur lors de la mise à jour du todo :', err);
+        res.status(500).send('Erreur lors de la mise à jour du todo');
       } else {
-        const todos = rows.map(todo => ({
-          id: todo.id,
-          title: todo.title,
-          completed: todo.completed
-        }));
-        res.json(todos);
+        res.sendStatus(200);
       }
     }
-    // connection.end();
-  });
+  );
+});
+
+//update posts
+app.put('/posts/:Id', (req, res) => {
+  const Id = req.params.Id;
+  const title = req.body.title;
+  const body = req.body.body;
+
+  connection.query(
+    'UPDATE posts SET title = ?, body = ? WHERE id = ?',
+    [title, body, Id],
+    (err, result) => {
+      if (err) {
+        console.error('Erreur lors de la mise à jour du post :', err);
+        res.status(500).send('Erreur lors de la mise à jour du post');
+      } else {
+        res.sendStatus(200);
+      }
+    }
+  );
+});
+
+//update comment
+app.put('/comments/:Id', (req, res) => {
+  const Id = req.params.Id;
+  const name = req.body.name;
+  const body = req.body.body;
+
+  connection.query(
+    'UPDATE comments SET name = ?, body = ? WHERE id = ?',
+    [name, body, Id],
+    (err, result) => {
+      if (err) {
+        console.error('Erreur lors de la mise à jour du post :', err);
+        res.status(500).send('Erreur lors de la mise à jour du post');
+      } else {
+        res.sendStatus(200);
+      }
+    }
+  );
 });
 
 
+//add todo
+app.post('/:userId/todos', (req, res) => {
+  const userId = req.params.userId;
+  const todo = req.body;
+
+  const todoToAdd = {
+    userId: userId,
+    title: todo.title,
+    completed: todo.completed
+  };
+
+  connection.query('INSERT INTO todos SET ?', [todoToAdd], (err, result) => {
+    if (err) {
+      console.error('Error while executing the query: ', err);
+      res.status(500).send('Error adding the todo');
+    } else {
+      const todoId = result.insertId;
+      const addedTodo = {
+        id: todoId,
+        userId: userId,
+        title: todo.title,
+        completed: todo.completed
+      };
+      res.status(201).json(addedTodo);
+    }
+  });
+});
+
+//have comments //work
 app.get('/posts/:postid/comments', (req, res) => {
   const postId = req.params.postid;
 
@@ -266,24 +412,56 @@ app.get('/posts/:postid/comments', (req, res) => {
   });
 });
 
-app.get('/comments', (req, res) => {
+//add comment //work
+app.post('/:postId/:email/comments', (req, res) => {
+  const postId = req.params.postId;
+  const email=req.params.email;
+  const comment = req.body;
 
-  connection.query('SELECT * FROM comments', (err, rows) => {
+  const commentToAdd = {
+    postId:postId,
+    name: comment.name,
+    body: comment.body,
+    email: email
+  };
+
+  connection.query('INSERT INTO comments SET ?', [commentToAdd], (err, result) => {
+    if (err) {
+      console.error('Error while executing the query: ', err);
+      res.status(500).send('Error adding the comment');
+    } else {
+      const commentId = result.insertId;
+      const addedComment = {
+        id: commentId,
+        postId:comment.postId,
+        name: comment.name,
+        email:comment.email,
+        body: comment.body
+       
+      };
+      res.status(201).json(addedComment);
+    }
+  });
+});
+
+
+app.get('/:userid/albums', (req, res) => {
+  const userId = req.params.userid;
+
+  connection.query('SELECT * FROM albums WHERE userId = ?', [userId], (err, rows) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
-      res.status(500).send('Erreur lors de la récupération des comments');
+      res.status(500).send('Erreur lors de la récupération des albums');
     } else {
       if (rows.length === 0) {
-        res.status(404).send('No comments found');
+        res.status(404).send('No albums found');
       } else {
-        const comments = rows.map(comment => ({
-          id: comment.id,
-          postId:comment.postId,
-          name: comment.name,
-          email: comment.email,
-          body:comment.body
+        const albums = rows.map(album => ({
+          id: album.id,
+          userId:album.userId,
+          title:album.title
         }));
-        res.json(comments);
+        res.json(albums);
       }
     }
     // connection.end();
@@ -291,30 +469,30 @@ app.get('/comments', (req, res) => {
 });
 
 
+app.get('/albums/:albumId/photos', (req, res) => {
+  const albumId = req.params.albumId;
 
-app.get('/posts', (req, res) => {
-
-  connection.query('SELECT * FROM posts', (err, rows) => {
+  connection.query('SELECT * FROM photos WHERE albumId = ?', [albumId], (err, rows) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
-      res.status(500).send('Erreur lors de la récupération des comments');
+      res.status(500).send('Erreur lors de la récupération des photos');
     } else {
       if (rows.length === 0) {
-        res.status(404).send('No posts found');
+        res.status(404).send('No photos found');
       } else {
-        const posts = rows.map(posts => ({
-          id: post.id,
-          postId:post.postId,
-          name: post.name,
-          email: post.email,
-          body:post.body
+        const photos = rows.map(photo => ({
+          id: photo.id,
+          albumId: photo.albumId,
+          title: photo.title,
+          url: photo.url,
+          thumbnailUrl: photo.thumbnailUrl
         }));
-        res.json(posts);
+        res.json(photos);
       }
     }
-    // connection.end();
   });
 });
+
 
 app.listen(3001, () => {
   console.log('Server is running on port 3000');
