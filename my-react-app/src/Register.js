@@ -32,45 +32,49 @@ const handleChange = ({target}) => {
 
 
 //submit
-  const handleSubmit = (event) => {
+const handleSubmit = async (event) => {
     event.preventDefault();
     console.log(inputs);
-
+  
     const data = JSON.stringify(inputs);
-
+    console.log(data);
+    console.log(inputs);
+  
     try {
-      const response = fetch("http://localhost:3000/users", {
+      const response = await fetch(`http://localhost:3001/${inputs.username}/users`, {
         method: "POST",
+        body: data, // Envoyer les données telles quelles (déjà au format JSON)
         headers: {
           "Content-Type": "application/json",
         },
-        body: data,
       });
-
+  
       console.log(`Status: ${response.status}`);
       console.log("Response headers:", response.headers);
-
-      const resData =response.json();
-
+  
+    //   const resData = await response.json();
+  
       if (response.status === 201) {
-        const user = {
-          id: resData.id,
-          username: resData.username,
-          password: resData.password,
-        };
-
-        console.log("User:", resData);
+        // const user = {
+        //   username: resData.username,
+        //   password: inputs.password,
+        // };
+  
+        // console.log("User:", resData);
         alert("Welcome! You were registered successfully.");
-        localStorage.setItem("currentUser", JSON.stringify(user));
-        navigate(`/users/${user.username}`);
+        // localStorage.setItem("currentUser", JSON.stringify(user));
+        // navigate(`/users/${user.username}`);
+        navigate('/login');
       } else {
         console.error(`Request failed with status code ${response.status}`);
-        alert("Sorry, there was an error. Try again");
+        alert("Username is already in use");
       }
     } catch (error) {
       console.error("An error occurred:", error);
     }
   };
+  
+  
     // const options = {
     //   hostname: 'localhost',
     //   port: 3000,
@@ -181,7 +185,7 @@ const handleChange = ({target}) => {
             value={inputs.phone || ""} 
             onChange={handleChange}
             placeholder="Enter your phone:"
-            pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+            pattern="[0-9]{3}[0-9]{3}[0-9]{4}"
           required
         />
         <input

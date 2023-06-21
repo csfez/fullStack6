@@ -1,4 +1,4 @@
-import React,{useState, useEffect} from 'react'
+import React from 'react'
 import { BrowserRouter, Routes, Route, useNavigate,Navigate  } from "react-router-dom";
 import {useParams } from "react-router-dom";
 
@@ -11,7 +11,7 @@ import Posts from './Posts';
 import Todos from './Todos';
 // import Albums from './albums';
 import Info from './Info';
-// import Comments from "./comments"
+import Comments from "./Comments"
 
 
 export default function App() {
@@ -25,8 +25,8 @@ export default function App() {
               <Route path="info" element={<Info />} />
               <Route path="todos" element={<Todos />}/>
               <Route path="posts" element={<Posts />} />
-              <Route path="posts/:postid/" element={<Posts />} >
-                <Route path="comments" element={<Info/>} />
+              <Route path="posts/:postId/" element={<Posts />} >
+                <Route path="comments" element={<Comments/>} />
               </Route>
             </Route>
             <Route path="*" element={<NoPage />} />

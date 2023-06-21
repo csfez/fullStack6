@@ -1,100 +1,159 @@
-// import React from "react"
-// import { useState ,useEffect } from "react"
+import React, { useState, useEffect } from 'react';
+function Todos() {
+    const [todos, setTodos] = useState([]);
+    const [newTodoTitle, setNewTodoTitle] = useState('');
+    const [newTodoCompleted, setNewTodoCompleted] = useState(false);
+    const [showformTodos, setshowformTodos] = useState(false);
+    const userId = JSON.parse(localStorage["currentUser"]).id;
 
-// const urlPrefix = 'https://jsonplaceholder.typicode.com/';
-// const selectPresentTodos = ['Serial', 'Execution', 'Alphabetical', 'Random'];
-
-// export default function Todos() {
     
+    async function fetchTodos(userId) {
+        try {
+          const response = await fetch(`http://localhost:3001/${userId}/todos`);
+          const data = await response.json();
+          setTodos(data);
+        } catch (error) {
+          console.error('Erreur lors de la récupération des todos:', error);
+        }
+      }
 
-//     const [listOfTodos, setListOfTodos] = useState([]);
-//     const userID = JSON.parse(localStorage["currentUser"]).id;
+      useEffect(() => {
+        fetchTodos(userId);
+      }, []);
 
+      function handleCheckboxChange(todoId, completed) {
+        const updatedTodos = todos.map(todo => {
+          if (todo.id === todoId) {
+            return { ...todo, completed: !completed };
+          }
+          return todo;
+        });
+        setTodos(updatedTodos);
+        updateTodoOnServer(todoId, !completed);
+      }
 
-//     useEffect(() => {
-//         fetch(`${urlPrefix}users/${userID}/todos`)
-//             .then(res => res.json())
-//             .then(data => setListOfTodos(data))
-//     }, [])
+      async function updateTodoOnServer(todoId, completed) {
+        try {
+          const response = await fetch(`http://localhost:3001/todos/${todoId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ completed }),
+          });
+      
+          if (!response.ok) {
+            console.error('Erreur lors de la mise à jour du todo sur le serveur');
+          }
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour du todo:', error);
+        }
+      }
 
-//     const handleChangeCheckbox = (event) => {
-//         let todoId = event.target.id;
-//         let currentTodo = listOfTodos.find(obj => obj.id == todoId);
-//         console.log(currentTodo);
-//         currentTodo = {...currentTodo, completed: !currentTodo.completed};
-//         console.log(currentTodo);
-//         fetch(`${urlPrefix}todos/${todoId}`, {
-//           method: 'PUT',
-//           body: JSON.stringify(currentTodo),
-//           headers: {
-//             'Content-type': 'application/json; charset=UTF-8',
-//           },
-//         }).then((response) => response.json())
-//             .then((data) => {
-//                 setListOfTodos(prevItems => prevItems.map(item => item.id == todoId ? data : item));
-//             })
-//             .catch((error) => {
-//             console.error('Error:', error);
-//             });
-//     }
+      function handleAddClick() {
+        const newTodo = {
+          title: newTodoTitle,
+          completed: newTodoCompleted
+        };
+      
+        fetch(`http://localhost:3001/${userId}/todos`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newTodo)
+        })
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          } else {
+            throw new Error('Erreur lors de l\'ajout du todo sur le serveur');
+          }
+        })
+        .then(data => {
+          setTodos([...todos, data]);
+          setNewTodoTitle('');
+          setNewTodoCompleted(false);
+        })
+        .catch(error => {
+          console.error('Erreur lors de l\'ajout du todo:', error);
+        });
+      }
 
-//     const handleSelect = (event) => {
-//         let present = event.target.value;
-//         if (present == 'Serial') {
-//             //let elementsItems = itemsToElements(content);
-//             let items = [...listOfTodos];
-//             items.sort((a, b) => (a.id - b.id) );
-//             setListOfTodos(items);
-//         }else if (present == 'Execution') {
-//             let completed = listOfTodos.filter(item => item.completed);
-//             let unCompleted = listOfTodos.filter(item => !item.completed);
-//             //let elementsItems = itemsToElements([...completed, ...unCompleted]);
-//             setListOfTodos([...completed, ...unCompleted]);
-//         } else if (present == 'Alphabetical') {
-//             let items = [...listOfTodos];
-//             items.sort((a, b) => (a.title > b.title) ? 1 : (a.title < b.title) ? -1 : 0);
-//             //let elementsItems = itemsToElements(items);
-//             setListOfTodos(items);
-//         } else {
-//             let items = [...listOfTodos];
-//             items=shuffleArray(items);
-//             //let elementsItems = itemsToElements(items);
-//             setListOfTodos(items);
-//         }
-//     }
+      function showFormTodosClick() {
+        setshowformTodos(true);
+      }
 
+      function handleSubmit(event) {
+        event.preventDefault();
+        handleAddClick();
+      }
 
-//     const itemsToElements =  
-//         listOfTodos.map(item =>
-//             (<div key={item.id} className="item-container">
-//                 <input className="liItem" type="checkbox" id={item.id} checked={item.completed} onChange={handleChangeCheckbox}/>
-//                 <label className="checkbox-label" htmlFor={`todo${item.id}`}>
-//                     <span className="title">{item.title}</span>
-//                 </label>
-//             </div>));
-
-//         let selectElement = (
-//             <select className="select-option" onChange={handleSelect}>
-//                 {selectPresentTodos.map(currentSelect =>
-//                 <option key={currentSelect} value={currentSelect}>{currentSelect}</option>)}
-//             </select>)
-        
+      function handleDeleteClick(item){
+        const requestOptions = {
+            method: 'DELETE',
+          };
+          
+          fetch(`http://localhost:3001/todos/${item.id}`, requestOptions)
+            .then(res => {
+              if (res.ok || res.status == 204) {
+                alert(`todo ${item.id} was deleted successfully`);
+                setTodos(prevItems => prevItems.filter(todo => todo.id !== item.id));
     
-//     const shuffleArray=(array) => {
-//         for (let i = array.length - 1; i > 0; i--) {
-//           const j = Math.floor(Math.random() * (i + 1));
-//           [array[i], array[j]] = [array[j], array[i]];
-//         }
-//         return array;
-//       }
+              } else {
+                console.error(`Request failed with status code ${res.statusCode}`);
+                throw new Error('Something went wrong');
+              }
+            })
+            .catch(error => {
+              console.error('An error occurred:', error);
+            });  
+      }
+      
+      return (
+        <div>
+          <h1>Liste des todos</h1>
+          <button id="addTodosButton" onClick={showFormTodosClick}>ADD NEW TODOS</button>
+          {showformTodos && (
+             <form onSubmit={handleSubmit}>
+                <input
+                type="text"
+                value={newTodoTitle}
+                onChange={event => setNewTodoTitle(event.target.value)}
+                placeholder="Nouveau Todo"
+                required
+                />
 
+                <input
+                type="checkbox"
+                checked={newTodoCompleted}
+                onChange={event => setNewTodoCompleted(event.target.checked)}
+                />
+                <label>Complété</label>
+                <button type="submit">Ajouter</button>
+            </form>
+            )}
+          {todos.length === 0 ? (
+            <p>Aucun todo trouvé.</p>
+          ) : (
+            <ul>
+              {todos.map(todo => (
+                <li key={todo.id}>
+                  <input
+                    type="checkbox"
+                    checked={todo.completed}
+                    onChange={() => handleCheckboxChange(todo.id, todo.completed)}
+                    />
+                  <span>{todo.title}</span> 
+                  <button onClick={() =>handleDeleteClick(todo)}>DELETE</button>
+
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
+                  
+  }
+export default Todos;
   
-//   return (
-//       <div className="content">
-//           <h2 c >Your todos:</h2>
-//         {selectElement}
-
-//         {itemsToElements}
-//     </div>
-//   )
-// }

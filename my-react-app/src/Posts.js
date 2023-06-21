@@ -1,7 +1,9 @@
 import React from "react"
-import { Link, Outlet } from "react-router-dom"
+import { Link, Outlet,useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
+import NewPost from './NewPost';
+
 // import Comments from "./Comments";
 
 // לשמור את מספר המשתמש
@@ -10,23 +12,25 @@ import { useParams } from "react-router-dom"
 const selectedPostStyle = { color: '#a85d5d', fontWeight: 'bold', fontSize: '1.2em' };
 
 export default function Posts() {
-    // const https = require('https');
+  const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage["currentUser"]);
+  const [postsItems, setPostsItems] = useState([]);
+  const [currentPostID, setCurrentPostID] = useState('');
+  // const [currentPostComments, setCurrentPostComments] = useState('');
+  const [selectedItemComments, setSelectedItemComments] = useState(null);
+  const [showAddPostForm, setShowAddPostForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Ajout d'une variable d'état pour le chargement
+  // const [onePostInputs, setOnePostInputs] = useState({});
+  const [selectedItemUpdate, setSelectedItemUpdate] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  
-    const userID = JSON.parse(localStorage["currentUser"]).id;
-    const [postsItems, setPostsItems] = useState([]);
-    const [currentPostID, setCurrentPostID] = useState('');
-    const [currentPostComments, setCurrentPostComments] = useState('');
-    //const [isDataFetched, setIsDataFetched] = useState(false);
-    const [isLoading, setIsLoading] = useState(true); // Ajout d'une variable d'état pour le chargement
-    
-    const showCommentsLabel = "SHOW COMMENTS";
-    const hideCommentsLabel = "HIDE COMMENTS";
+  const showCommentsLabel = "SHOW COMMENTS";
+  const hideCommentsLabel = "HIDE COMMENTS";
 
     useEffect(() => {
         const fetchData = async () => {
           try {
-            const response = await fetch(`http://localhost:3001/${userID}/posts`);
+            const response = await fetch(`http://localhost:3001/${currentUser.id}/posts`);
             console.log(`Status: ${response.status}`);
             console.log("Response headers:", response.headers);
     
@@ -54,234 +58,129 @@ export default function Posts() {
       }
     
     const handleClick = (event, id) => {
-        if (currentPostID === '' || currentPostID !== id) {
-            setCurrentPostID(id);
-            setCurrentPostComments('');
-        } else {
-            setCurrentPostID('');
-        }
+
     }
 
-    const handleCommentsClick = async (event) => {
-        const postId = event.target.id.split("_")[1];
-        
-        if (currentPostID !== postId) {
-          try {
-            const response = await fetch(`http://localhost:3001/posts/${postId}/comments`);
-            console.log(`Status: ${response.status}`);
-            console.log("Response headers:", response.headers);
-            
-            if (response.status === 200) {
-              const data = await response.json();
-              console.log('Comments:', data);
-              setCurrentPostID(postId);
-              setCurrentPostComments([...data]);
-            } else {
-              console.error(`Request failed with status code ${response.status}`);
+    const handleCommentsClick  = (item) => {
+      if (selectedItemComments === item) {
+        setSelectedItemComments(null);
+        navigate(`/users/${currentUser.username}/posts`);
+      } else {
+        setSelectedItemComments(item);
+        navigate(`/users/${currentUser.username}/posts/${item.id}/comments`);
+      }
+    };
+
+     
+    const handleAddClick = (event) => {
+      setShowAddPostForm(true);
+    };
+
+    const handleAddNewPostClick = (item) => {
+      
+        console.log("New post data:", item);
+
+          let requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+          };
+    
+          fetch(`http://localhost:3001/${currentUser.id}/posts`, requestOptions)
+            .then(res => {
+              if (res.ok) {
+                return res.json();
+              } else {
+                console.error(`Request failed with status code ${res.statusCode}`);
+                throw new Error('Something went wrong');
+              }
+            })
+            .then(data => {
+              // Traitement des données du post créé
+              setPostsItems(prevItems => [...prevItems, data]);
+              alert(`The post was created successfully`);
+              console.log('The post was created successfully:', data);
+              // setOnePost(false);
+              // setOnePostInputs({});
+            })
+            .catch(error => {
               alert("Sorry, there was an error. Try again");
-            }
-          } catch (error) {
-            console.error("An error occurred:", error);
-            alert("Sorry, there was an error. Try again");
-          }
-        } else {
-          setCurrentPostID('');
+              console.error('An error occurred:', error);
+            });
         }
+  
+  
+  
+    const handleDeleteClick = (item) => {
+      
+      const requestOptions = {
+        method: 'DELETE',
       };
       
-    const handleAddClick = (event) => {
+      fetch(`http://localhost:3001/posts/${item.id}`, requestOptions)
+        .then(res => {
+          if (res.ok || res.status == 204) {
+            alert(`Post #${item.id} was deleted successfully`);
+            setPostsItems(prevItems => prevItems.filter(post => post.id !== item.id));
 
+          } else {
+            console.error(`Request failed with status code ${res.statusCode}`);
+            throw new Error('Something went wrong');
+          }
+        })
+        .catch(error => {
+          console.error('An error occurred:', error);
+        });  
+    }
+  
+    const handleUpdateClick = (item) => {
+      setSelectedItemUpdate(item);
     }
 
-    const handleDeleteClick = (event) => {
-        // let deleteType = event.target.id.split("_")[0];
-        // let id = event.target.id.split("_")[1];
-        
-        // if (deleteType == "deletePostButton") {
-        //     const options = {
-        //         hostname: 'localhost',
-        //         port: 3000,
-        //         path: `posts/${id}`,
-        //         method: 'DELETE',
-        //         headers: {
-        //         'Content-Type': 'application/json'
-        //         }
-        //     };
-            
-        //     const req = https.request(options, (res) => {
-        //         console.log(`Status: ${res.statusCode}`);
-        //         console.log('Response headers:', res.headers);
-            
-        //         let data = '';
-            
-        //         res.on('data', (chunk) => {
-        //         data += chunk;
-        //         });
-            
-        //         res.on('end', () => {
-        //             if (res.statusCode === 204) {
-        //                 alert(`Post #${id} was deleted successfully`)
-        //             } else {
-        //               console.error(`Request failed with status code ${res.statusCode}`);
-        //               alert("Sorry, there was an error. Try again")
-        //             }
-        //             console.log('Response data:', data);
-        //         });
-        //     });
-            
-        //     req.on('error', (error) => {
-        //         console.error('An error occurred:', error);
-        //     });
-            
-        //     req.end();
-        // } else {
-        //     const options = {
-        //         hostname: 'localhost',
-        //         port: 3000,
-        //         path: `comments/${id}`,
-        //         method: 'DELETE',
-        //         headers: {
-        //         'Content-Type': 'application/json'
-        //         }
-        //     };
-            
-        //     const req = https.request(options, (res) => {
-        //         console.log(`Status: ${res.statusCode}`);
-        //         console.log('Response headers:', res.headers);
-            
-        //         let data = '';
-            
-        //         res.on('data', (chunk) => {
-        //         data += chunk;
-        //         });
-            
-        //         res.on('end', () => {
-        //             if (res.statusCode === 204) {
-        //                 alert(`Comment #${id} was deleted successfully`)
-        //             } else {
-        //               console.error(`Request failed with status code ${res.statusCode}`);
-        //               alert("Sorry, there was an error. Try again")
-        //             }
-        //             console.log('Response data:', data);
-        //         });
-        //     });
-            
-        //     req.on('error', (error) => {
-        //         console.error('An error occurred:', error);
-        //     });
-            
-        //     req.end();
-        // }   
-    }
+   const handleUpdatePost = (updatedPost) => {
+    setPostsItems((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post.id === updatedPost.id) {
+          return updatedPost; // Mettre à jour le post correspondant
+        }
+        return post; // Renvoyer les autres posts inchangés
+      })
+    );
+  };
 
-    const handleUpdateClick = (event) => {
-        // let updateType = event.target.id.split("_")[0];
-        // let id = event.target.id.split("_")[1];
-        
-        // if (updateType == "updatePostButton") {
-        //     const options = {
-        //         hostname: 'localhost',
-        //         port: 3000,
-        //         path: `posts/${id}`,
-        //         method: 'PUT',
-        //         headers: {
-        //         'Content-Type': 'application/json'
-        //         },
-        //         data: {}
-        //     };
-            
-        //     const req = https.request(options, (res) => {
-        //         console.log(`Status: ${res.statusCode}`);
-        //         console.log('Response headers:', res.headers);
-            
-        //         let data = '';
-            
-        //         res.on('data', (chunk) => {
-        //         data += chunk;
-        //         });
-            
-        //         res.on('end', () => {
-        //             if (res.statusCode === 204) {
-        //                 alert(`Post #${id} was deleted successfully`)
-        //             } else {
-        //               console.error(`Request failed with status code ${res.statusCode}`);
-        //               alert("Sorry, there was an error. Try again")
-        //             }
-        //             console.log('Response data:', data);
-        //         });
-        //     });
-            
-        //     req.on('error', (error) => {
-        //         console.error('An error occurred:', error);
-        //     });
-        //     req.write(options.data);
-        //     req.end();
-        // } else {
-        //     const options = {
-        //         hostname: 'localhost',
-        //         port: 3000,
-        //         path: `comments/${id}`,
-        //         method: 'DELETE',
-        //         headers: {
-        //         'Content-Type': 'application/json'
-        //         }
-        //     };
-            
-        //     const req = https.request(options, (res) => {
-        //         console.log(`Status: ${res.statusCode}`);
-        //         console.log('Response headers:', res.headers);
-            
-        //         let data = '';
-            
-        //         res.on('data', (chunk) => {
-        //         data += chunk;
-        //         });
-            
-        //         res.on('end', () => {
-        //             if (res.statusCode === 204) {
-        //                 alert(`Comment #${id} was deleted successfully`)
-        //             } else {
-        //               console.error(`Request failed with status code ${res.statusCode}`);
-        //               alert("Sorry, there was an error. Try again")
-        //             }
-        //             console.log('Response data:', data);
-        //         });
-        //     });
-            
-        //     req.on('error', (error) => {
-        //         console.error('An error occurred:', error);
-        //     });
-            
-        //     req.end();
-        // }   
-    }
+    const handleCancel = () => {
+      setShowAddPostForm(false);
+    };
 
-    //<Link to={`${item.id}/comments`}>Comments</Link>
     const showPosts =
         
-        postsItems.map(item =><div>
+        postsItems.map(item =>(
+        <div>
             <li key={item.id} style={currentPostID === item.id ? selectedPostStyle : {}}>
                            
                 <h3 className="postTitle" id={`title${item.id}`}
                     onClick={(e) => handleClick(e, item.id)}>
                     {item.title} </h3>
                 <p className="postBody" id={`body${item.id}`}> {item.body} </p>
-                <button id={`commentsButton_${item.id}`} onClick={handleCommentsClick}>
-                    {currentPostID === item.id ? hideCommentsLabel : showCommentsLabel}</button>
-                <button id={`deletePostButton_${item.id}`} onClick={handleDeleteClick}>DELETE</button>
-                <button id={`updatePostButton_${item.id}`} onClick={handleUpdateClick}>UPDATE</button>              
-            </li>
-            {currentPostID === item.id && <button id="addCommentButton" onClick={handleAddClick}>ADD NEW COMMENT</button>
-                &&
-                <ul>
-                    {currentPostComments.map(item =>
-                        <li key={item.id}>{item.name}
-                            <button id={`deleteCommentButton_${item.id}`} onClick={handleDeleteClick}>DELETE</button>
-                            <button id={`updateCommentButton_${item.id}`} onClick={handleUpdateClick}>UPDATE</button>
-                        </li>)}   
-                </ul>}
-            {/* {currentPostID == item.id && <Link className="link-comment" to={`${item.id}/comments`}>Comments</Link>} */}
-        </div>);
+                <button className='post-buttons' onClick={() => handleCommentsClick(item)}>
+                {currentPostID === item.id ? hideCommentsLabel : showCommentsLabel} </button>
+                <button id={`deletePostButton_${item.id}`} onClick={() =>handleDeleteClick(item)}>DELETE</button>
+                <button id={`updatePostButton_${item.id}`} onClick={() =>handleUpdateClick(item)}>UPDATE</button>              
+                {item === selectedItemUpdate && (
+                  <>
+                    <NewPost
+                      post={item}
+                      onSave={handleUpdatePost}
+                      onCancel={handleCancel}
+                    />
+                    <button onClick={handleCancel}>CANCEL</button>
+                  </>
+                )}
+                {item === selectedItemComments ? <Outlet  /> : null}
+
+                </li>
+               </div>));
+
 
 
     return (
@@ -289,8 +188,24 @@ export default function Posts() {
             <h2 className="second-title">Your posts</h2>
             <button id="addPostButton" onClick={handleAddClick}>ADD NEW POST</button>
             <div>
-                {
-                    postsItems.length > 0 ? (
+            {showAddPostForm && (
+             <>
+             <NewPost
+               onSave={(newPostData) => {
+                //  if (isEditing) {
+                //    handleUpdatePostClick(newPostData);
+                //  } else {
+                   handleAddNewPostClick(newPostData);
+                //  }
+                 setShowAddPostForm(false);
+               }}
+               onCancel={handleCancel}
+               isUpdate={isEditing} // isEditing est un booléen indiquant si vous êtes en mode édition
+              //  post={selectedPost} // selectedPost est le post que vous éditez, peut être null si vous êtes en mode création
+             />
+           </>
+            )}
+                { postsItems.length > 0 ? (
                         <section>
                             <ul>
                                {showPosts}
@@ -302,8 +217,7 @@ export default function Posts() {
                         )
                 }
             </div>
-            <Outlet />
+            {/* <Outlet /> */}
         </section>
     )
 }
-
