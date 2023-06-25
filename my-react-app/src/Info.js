@@ -99,7 +99,7 @@ import React, { useEffect, useState } from 'react';
 
 export default function Info() {
   const [userData, setUserData] = useState({});
-  const userId = 3;
+ const userId  = JSON.parse(localStorage["currentUser"]).id;
 
   useEffect(() => {
     const fetchUserData = async () => {

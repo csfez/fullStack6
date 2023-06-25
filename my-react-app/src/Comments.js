@@ -7,6 +7,8 @@ const Comments = () => {
   const { postId } = useParams();
   const [comments, setComments] = useState([]);
   const [showAddCommentForm, setShowAddCommentForm] = useState(false);
+  const [showUpdateCommentForm, setShowUpdateCommentForm] = useState(false);
+
   const [commentInputs, setCommentInputs] = useState({
     name: '',
     email: currentUser.email,
@@ -46,14 +48,15 @@ const Comments = () => {
 
   const handleCancel = () => {
     setShowAddCommentForm(false);
+    setShowUpdateCommentForm(false);
   };
 
-  const handleAddNewCommentSubmit = (event) => {
-    event.preventDefault();
+  const handleAddNewCommentSubmit = (item) => {
+    // event.preventDefault();
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(commentInputs)
+      body: JSON.stringify(item)
     };
 
     fetch(`http://localhost:3001/${postId}/${currentUser.email}/comments`, requestOptions)
@@ -104,6 +107,7 @@ const Comments = () => {
 
   const handleUpdateClick = (comment) => {
     setSelectedItemUpdate(comment);
+    setShowUpdateCommentForm(true);
 
   };
 
@@ -141,6 +145,8 @@ const Comments = () => {
               handleAddNewCommentSubmit(newCommentData);
               setShowAddCommentForm(false);
             }}
+            isUpdate={false}
+            postId={postId}
           />
           </>
       )}
@@ -152,14 +158,15 @@ const Comments = () => {
           <pre>{comment.body}</pre>
           <button onClick={() => handleDeleteClick(comment)}>DELETE</button>
           <button onClick={() => handleUpdateClick(comment)}>UPDATE</button>
-          {comment === selectedItemUpdate && (
+          {comment === selectedItemUpdate && showUpdateCommentForm &&(
             <>
               <NewComment
                 comment={comment}
                 onSave={handleUpdateComments}
                 onCancel={handleCancel}
+                isUpdate={true}
               />
-              <button onClick={handleCancel}>CANCEL</button>
+              {/* <button onClick={handleCancel}>CANCEL</button> */}
             </>
                 )}
         </div>

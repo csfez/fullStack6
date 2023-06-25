@@ -105,7 +105,9 @@ app.get('/users/:id', (req, res) => {
 
 app.post('/:username/users', (req, res) => {
   const user = req.body; // Récupérer les données de l'utilisateur depuis la requête
-  
+  console.log("user register");
+  console.log(user);
+
   // if (user) {
   // Vérifier si le nom d'utilisateur est déjà utilisé
   connection.query('SELECT * FROM users WHERE username = ?', [user.username], (err, rows) => {
@@ -246,8 +248,10 @@ app.post('/:userId/posts', (req, res) => {
 app.get('/users_password', (req, res) => {
   const userName = req.query.username;
   const password = req.query.password;
+  console.log("username in login ", userName);
+  console.log("password in login ", password);
 
-  connection.query('SELECT users.*, users_password.* FROM users INNER JOIN users_password ON users.username = ? AND users_password.password = ?', [  userName, password], (err, rows) => {
+  connection.query('SELECT * FROM users_password WHERE username = ? AND password = ?', [userName, password], (err, rows) => {
     if (err) {
       console.error('Erreur lors de l\'exécution de la requête :', err);
       res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
@@ -256,22 +260,61 @@ app.get('/users_password', (req, res) => {
         res.status(404).send('User not found');
       } else {
         const user = rows[0];
-        const userInfo = {
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          email: user.email,
-          address: user.address,
-          phone: user.phone,
-          website: user.website,
-          company: user.company
-        };
-        console.log(userInfo);
-        res.json(userInfo);
+        connection.query('SELECT * FROM users WHERE username = ?', [userName], (err, rows) => {
+          if (err) {
+            console.error('Erreur lors de l\'exécution de la requête :', err);
+            res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
+          } else {
+            if (rows.length === 0) {
+              res.status(404).send('User no found');
+            } else {
+              const userfromUers = rows[0]; // Première ligne de résultats
+              const userInfo = {
+                id: userfromUers.id,
+                name: userfromUers.name,
+                username: userfromUers.username,
+                email: userfromUers.email,
+                address:userfromUers.address,
+                phone:userfromUers.phone,
+                website:userfromUers.website,
+                company: userfromUers.company
+      
+              };
+              console.log(userInfo);
+              res.json(userInfo);
+            }
+          }
+        });
       }
     }
   });
 });
+
+  // connection.query('SELECT users.*, users_password.* FROM users INNER JOIN users_password ON users.username = ? AND users_password.password = ?', [  userName, password], (err, rows) => {
+  //   if (err) {
+  //     console.error('Erreur lors de l\'exécution de la requête :', err);
+  //     res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
+  //   } else {
+  //     if (rows.length === 0) {
+  //       res.status(404).send('User not found');
+  //     } else {
+  //       const user = rows[0];
+  //       const userInfo = {
+  //         id: user.id,
+  //         name: user.name,
+  //         username: user.username,
+  //         email: user.email,
+  //         address: user.address,
+  //         phone: user.phone,
+  //         website: user.website,
+  //         company: user.company
+  //       };
+  //       console.log(userInfo);
+  //       res.json(userInfo);
+  //     }
+  //   }
+  // });
+// });
 
 
 //show the todos
@@ -298,13 +341,13 @@ app.get('/:userId/todos', (req, res) => {
   });
 });
 
-//update todos
+//update todos completed
 app.put('/todos/:Id', (req, res) => {
   const Id = req.params.Id;
   const { completed } = req.body;
-
+  console.log("completed",completed);
   connection.query(
-    'UPDATE todos SET completed = ? WHERE id = ?'
+    'UPDATE todos SET completed = ? WHERE id = ?',
     [completed, Id],
     (err, result) => {
       if (err) {
@@ -316,6 +359,27 @@ app.put('/todos/:Id', (req, res) => {
     }
   );
 });
+
+//update todo title  //dans le body il faut avoir le meme nom que on envois dans le client
+app.put('/todosTitle/:Id', (req, res) => {
+  const Id = req.params.Id;
+  const { newTitle  } = req.body;
+  console.log("title ",newTitle );
+
+  connection.query(
+    'UPDATE todos SET title = ? WHERE id = ?',
+    [newTitle , Id],
+    (err, result) => {
+      if (err) {
+        console.error('Error updating todo :', err);
+        res.status(500).send('Error updating todo');
+      } else {
+        res.sendStatus(200);
+      }
+    }
+  );
+});
+
 
 //update posts
 app.put('/posts/:Id', (req, res) => {
@@ -412,11 +476,14 @@ app.get('/posts/:postid/comments', (req, res) => {
   });
 });
 
-//add comment //work
+//add comment //work //jai change comment en commentToAdd a la fin
 app.post('/:postId/:email/comments', (req, res) => {
   const postId = req.params.postId;
   const email=req.params.email;
   const comment = req.body;
+  console.log("postId ",postId);
+  console.log("email ",email);
+  console.log("comment ",comment);
 
   const commentToAdd = {
     postId:postId,
@@ -433,12 +500,15 @@ app.post('/:postId/:email/comments', (req, res) => {
       const commentId = result.insertId;
       const addedComment = {
         id: commentId,
-        postId:comment.postId,
-        name: comment.name,
-        email:comment.email,
-        body: comment.body
+        postId:commentToAdd.postId,
+        name: commentToAdd.name,
+        email:commentToAdd.email,
+        body: commentToAdd.body
        
       };
+
+      console.log("addedComment ",addedComment);
+      
       res.status(201).json(addedComment);
     }
   });

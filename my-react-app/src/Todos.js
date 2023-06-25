@@ -2,9 +2,14 @@ import React, { useState, useEffect } from 'react';
 function Todos() {
     const [todos, setTodos] = useState([]);
     const [newTodoTitle, setNewTodoTitle] = useState('');
+    const [updateTodoTitle, setUpdateTodoTitle] = useState('');
+
     const [newTodoCompleted, setNewTodoCompleted] = useState(false);
     const [showformTodos, setshowformTodos] = useState(false);
+    
     const userId = JSON.parse(localStorage["currentUser"]).id;
+  const [showformUpdate,setShowformUpdate]=useState(false);
+  const [updateTodoId, setUpdateTodoId] = useState(null);
 
     
     async function fetchTodos(userId) {
@@ -31,6 +36,17 @@ function Todos() {
         setTodos(updatedTodos);
         updateTodoOnServer(todoId, !completed);
       }
+
+      function handleTitleChange(todoId, newTitle) {
+        const updatedTodos = todos.map(todo => {
+          if (todo.id === todoId) {
+            return { ...todo, title: newTitle };
+          }
+          return todo;
+        });
+        setTodos(updatedTodos);
+      }
+      
 
       async function updateTodoOnServer(todoId, completed) {
         try {
@@ -110,6 +126,47 @@ function Todos() {
             });  
       }
       
+      function handleUpdateClick(item){
+        setShowformUpdate(true);
+        setUpdateTodoId(item.id);
+      }
+
+      function handleSubmitUpdate(event, item) {
+        event.preventDefault(); // Prevent page reload
+      
+        const newTitle = updateTodoTitle;
+        item.title = newTitle;
+        fetch(`http://localhost:3001/todosTitle/${item.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ newTitle })
+        })
+          .then(response => {
+            if (response.ok) {
+              handleTitleChange(item.id, newTitle);
+              setUpdateTodoTitle('');
+              setShowformUpdate(false); // Hide the update form
+            } else {
+              throw new Error('Error updating todo on server');
+            }
+          })
+          .catch(error => {
+            console.error('Error updating todo:', error);
+          });
+      }
+      
+      const handleInputChange = (event) => {
+        const { value } = event.target;
+        setUpdateTodoTitle(value);
+      };
+    
+      const handleCancel = () => {
+        setShowformUpdate(false);
+        setUpdateTodoTitle('');
+      };
+
       return (
         <div>
           <h1>Liste des todos</h1>
@@ -130,11 +187,11 @@ function Todos() {
                 onChange={event => setNewTodoCompleted(event.target.checked)}
                 />
                 <label>Complété</label>
-                <button type="submit">Ajouter</button>
+                <button type="submit">Add</button>
             </form>
             )}
           {todos.length === 0 ? (
-            <p>Aucun todo trouvé.</p>
+            <p>no todo found</p>
           ) : (
             <ul>
               {todos.map(todo => (
@@ -146,7 +203,22 @@ function Todos() {
                     />
                   <span>{todo.title}</span> 
                   <button onClick={() =>handleDeleteClick(todo)}>DELETE</button>
+                  <button onClick={() =>handleUpdateClick(todo)}>Update</button>
+                  {showformUpdate && updateTodoId === todo.id &&(
+                    <form onSubmit={event => handleSubmitUpdate(event, todo)}>
 
+                    <input
+                    type="text"
+                    className="inputTypeIn"
+                    value={updateTodoTitle===''?todo.title:updateTodoTitle}
+                    onChange={handleInputChange}
+                    required
+                    />
+                   <button type="submit">SAVE</button>
+                   <button onClick={handleCancel}>CANCEL</button>
+
+                    </form>
+                    )}
                 </li>
               ))}
             </ul>

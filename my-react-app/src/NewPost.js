@@ -5,6 +5,8 @@ export default function NewPost({ post, onSave, onCancel, isUpdate }) {
     body: post ? post.body : '',
     id: post ? post.id : ''
   });
+  const currentUser = JSON.parse(localStorage["currentUser"]);
+
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -16,28 +18,36 @@ export default function NewPost({ post, onSave, onCancel, isUpdate }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if(isUpdate){
+      try {
+        const requestOptions = {
+          method: 'PUT' , // Utiliser PUT pour la mise à jour et POST pour la création
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        };
 
-    try {
-      const requestOptions = {
-        method: isUpdate ? 'PUT' : 'POST', // Utiliser PUT pour la mise à jour et POST pour la création
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      };
-
-      const url = isUpdate ? `http://localhost:3001/posts/${post.id}` : 'http://localhost:3001/posts';
-      const response = await fetch(url, requestOptions);
-      if (response.ok) {
-        const updatedPost = formData;
-        onSave(updatedPost);
-      } else {
-        console.error(`Request failed with status code ${response.status}`);
-        throw new Error('Something went wrong');
+        const url = `http://localhost:3001/posts/${post.id}`;
+        const response = await fetch(url, requestOptions);
+        if (response.ok) {
+          const updatedPost = formData;
+          onSave(updatedPost);
+        } else 
+        {
+          if(!isUpdate){
+          }
+          console.error(`Request failed with status code ${response.status}`);
+          throw new Error('Something went wrong');
+        }
+      } catch (error) {
+        console.error('An error occurred:', error);
+        // Handle error scenario appropriately
       }
-    } catch (error) {
-      console.error('An error occurred:', error);
-      // Handle error scenario appropriately
-    }
-  };
+  }
+  else{
+    onSave(formData);
+
+  }
+};
 
   return (
     <div className="addOrUpdateDiv">

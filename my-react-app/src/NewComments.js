@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 
-export default function NewComment({ comment, onSave, onCancel }) {
+export default function NewComment({ comment, onSave, onCancel ,isUpdate,postId}) {
     const [formData, setFormData] = useState({
         name: comment? comment.name:'',
         body: comment? comment.name:'',
         id: comment? comment.id:'',
         email: comment? comment.email:''
         });
+    const currentUser = JSON.parse(localStorage["currentUser"]);
+
         
         const handleInputChange = (event) => {
         const { name, value } = event.target;
@@ -16,29 +18,40 @@ export default function NewComment({ comment, onSave, onCancel }) {
         }));
         };
    
-    const handleSubmit = async (event) => {
-      event.preventDefault();
-    
-      try {
-        const requestOptions = {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        };
-    
-        const response = await fetch(`http://localhost:3001/comments/${comment.id}`, requestOptions);
-        if (response.ok) {
-          const updatedComment = formData;
-          onSave(updatedComment);
-        } else {
-          console.error(`Request failed with status code ${response.status}`);
-          throw new Error('Something went wrong');
+      const handleSubmit = async (event) => {
+       event.preventDefault();
+        if(isUpdate){
+          try {
+            const requestOptions = {
+                method:'PUT' , // Utiliser PUT pour la mise à jour et POST pour la création
+                headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData)
+            };
+        
+
+            const url = `http://localhost:3001/comments/${comment.id}`;
+            const response = await fetch(url, requestOptions);
+
+            if (response.ok) {
+              const updatedComment = formData;
+              onSave(updatedComment);
+            } else 
+            {
+              if(!isUpdate){
+              }
+              console.error(`Request failed with status code ${response.status}`);
+              throw new Error('Something went wrong');
+            }
+          } catch (error) {
+            console.error('An error occurred:', error);
+            // Handle error scenario appropriately
+          }
         }
-      } catch (error) {
-        console.error('An error occurred:', error);
-        // Handle error scenario appropriately
-      }
-    };
+        else{
+          onSave(formData);
+          
+        }
+      };
 
 
     
@@ -67,7 +80,7 @@ export default function NewComment({ comment, onSave, onCancel }) {
             placeholder="Enter comment body"
             required
           />
-          <input type="submit" name="submit" value="SUBMIT" />
+          <button type="submit">{isUpdate ? 'UPDATE' : 'SAVE'}</button>
           <button onClick={onCancel}>CANCEL</button>
         </form>
       </div>

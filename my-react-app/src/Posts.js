@@ -19,6 +19,8 @@ export default function Posts() {
   // const [currentPostComments, setCurrentPostComments] = useState('');
   const [selectedItemComments, setSelectedItemComments] = useState(null);
   const [showAddPostForm, setShowAddPostForm] = useState(false);
+  const [showUpdatePostForm, setShowUpdatePostForm] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true); // Ajout d'une variable d'état pour le chargement
   // const [onePostInputs, setOnePostInputs] = useState({});
   const [selectedItemUpdate, setSelectedItemUpdate] = useState(null);
@@ -135,9 +137,10 @@ export default function Posts() {
   
     const handleUpdateClick = (item) => {
       setSelectedItemUpdate(item);
+      setShowUpdatePostForm(true);
     }
 
-   const handleUpdatePost = (updatedPost) => {
+   const handleUpdatePost = (updatedPost) => { //for showing good the posts after update
     setPostsItems((prevPosts) =>
       prevPosts.map((post) => {
         if (post.id === updatedPost.id) {
@@ -150,6 +153,7 @@ export default function Posts() {
 
     const handleCancel = () => {
       setShowAddPostForm(false);
+      setShowUpdatePostForm(false);
     };
 
     const showPosts =
@@ -166,17 +170,19 @@ export default function Posts() {
                 {currentPostID === item.id ? hideCommentsLabel : showCommentsLabel} </button>
                 <button id={`deletePostButton_${item.id}`} onClick={() =>handleDeleteClick(item)}>DELETE</button>
                 <button id={`updatePostButton_${item.id}`} onClick={() =>handleUpdateClick(item)}>UPDATE</button>              
-                {item === selectedItemUpdate && (
+                {item === selectedItemUpdate  && showUpdatePostForm &&(
                   <>
                     <NewPost
+                      
                       post={item}
                       onSave={handleUpdatePost}
                       onCancel={handleCancel}
+                      isUpdate={true}
                     />
-                    <button onClick={handleCancel}>CANCEL</button>
+                    {/* <button onClick={handleCancel}>CANCEL</button> */}
                   </>
                 )}
-                {item === selectedItemComments ? <Outlet  /> : null}
+                {item === selectedItemComments ? <Outlet postId={item.id} /> : null}
 
                 </li>
                </div>));
