@@ -33,8 +33,13 @@ const Comments = () => {
         console.log('Comments:', data);
         setComments(data);
       } else {
-        console.error(`Request failed with status code ${response.status}`);
-        alert('Sorry, there was an error. Try again');
+          if(response.status===404){
+            alert('No comments found');
+          }else{
+            console.error(`Request failed with status code ${response.status}`);
+            alert('Sorry, there was an error. Try again');
+          }
+       
       }
     } catch (error) {
       console.error('An error occurred:', error);

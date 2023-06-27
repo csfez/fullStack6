@@ -21,9 +21,9 @@ export default function Layout() {
                     <li>
                         <Link to={`/users/${Username}/posts`}>Posts</Link>
                     </li>
-                    {/* <li>
+                    <li>
                         <Link to={`/users/${Username}/albums`}>Albums</Link>
-                    </li> */}
+                    </li>
                     <li>
                         <Link to={"/login"}>Logout</Link>
                     </li>

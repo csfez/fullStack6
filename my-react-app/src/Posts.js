@@ -41,8 +41,13 @@ export default function Posts() {
               console.log("Posts:", data);
               setPostsItems([...data]);
             } else {
-              console.error(`Request failed with status code ${response.status}`);
-              alert("Sorry, there was an error. Try again");
+              if(response.status===404){
+                return;
+              }else{
+                console.error(`Request failed with status code ${response.status}`);
+                alert('Sorry, there was an error. Try again');
+              }
+           
             }
           } catch (error) {
             console.error("An error occurred:", error);
@@ -55,12 +60,17 @@ export default function Posts() {
       }, []);
     
 
-      if (postsItems.length === 0) {
-        return <div>Loading...</div>;
-      }
+      // if (postsItems.length === 0) {
+      //   return <div>Loading...</div>;
+      // }
     
     const handleClick = (event, id) => {
-
+      if(currentPostID){
+        setCurrentPostID('');
+      }
+      else{
+        setCurrentPostID(id);
+      }
     }
 
     const handleCommentsClick  = (item) => {
@@ -119,9 +129,9 @@ export default function Posts() {
         method: 'DELETE',
       };
       
-      fetch(`http://localhost:3001/posts/${item.id}`, requestOptions)
+      fetch(`http://localhost:3001/postsAndComments/${item.id}`, requestOptions)
         .then(res => {
-          if (res.ok || res.status == 204) {
+          if (res.ok || res.status === 204) {
             alert(`Post #${item.id} was deleted successfully`);
             setPostsItems(prevItems => prevItems.filter(post => post.id !== item.id));
 
@@ -167,7 +177,7 @@ export default function Posts() {
                     {item.title} </h3>
                 <p className="postBody" id={`body${item.id}`}> {item.body} </p>
                 <button className='post-buttons' onClick={() => handleCommentsClick(item)}>
-                {currentPostID === item.id ? hideCommentsLabel : showCommentsLabel} </button>
+                {item === selectedItemComments ? hideCommentsLabel : showCommentsLabel} </button>
                 <button id={`deletePostButton_${item.id}`} onClick={() =>handleDeleteClick(item)}>DELETE</button>
                 <button id={`updatePostButton_${item.id}`} onClick={() =>handleUpdateClick(item)}>UPDATE</button>              
                 {item === selectedItemUpdate  && showUpdatePostForm &&(
@@ -219,7 +229,7 @@ export default function Posts() {
                         </section>
 
                     ) : (
-                            <h2>Loading...</h2>
+                            <h3>No posts found</h3>
                         )
                 }
             </div>

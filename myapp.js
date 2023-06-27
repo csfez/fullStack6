@@ -178,6 +178,72 @@ app.put('/users/:id', (req, res) => {
   });
 });
 
+//delete posts and all the comments 
+app.delete('/postsAndComments/:id', (req, res) => {
+  const id = req.params.id;
+
+  connection.query('SELECT * FROM comments WHERE postId = ?', [id], (err, comments) => {
+    if (err) {
+      console.error('Error while executing the query: ', err);
+      res.status(500).send('Error retrieving comments');
+    } else {
+      // Supprimez les commentaires ici
+      comments.forEach((comment) => {
+        connection.query('DELETE FROM comments WHERE id = ?', [comment.id], (err) => {
+          if (err) {
+            console.error('Error while executing the query: ', err);
+            res.status(500).send('Error deleting comments');
+          }
+        });
+      });
+
+      // Supprimez l'article après avoir supprimé les commentaires
+      connection.query('DELETE FROM posts WHERE id = ?', [id], (err, result) => {
+        if (err) {
+          console.error('Error while executing the query: ', err);
+          res.status(500).send('Error deleting post');
+        } else {
+          res.send('Post deleted successfully');
+        }
+      });
+    }
+  });
+});
+
+//delete albums and photos
+app.delete('/albumsAndPhotos/:id', (req, res) => {
+  const id = req.params.id;
+
+  connection.query('SELECT * FROM photos WHERE albumId = ?', [id], (err, photos) => {
+    if (err) {
+      console.error('Error while executing the query: ', err);
+      res.status(500).send('Error retrieving photos');
+    } else {
+      // Supprimez les photoaires ici
+      photos.forEach((photo) => {
+        connection.query('DELETE FROM photos WHERE id = ?', [photo.id], (err) => {
+          if (err) {
+            console.error('Error while executing the query: ', err);
+            res.status(500).send('Error deleting photos');
+          }
+        });
+      });
+
+      // Supprimez l'article après avoir supprimé les photoaires
+      connection.query('DELETE FROM albums WHERE id = ?', [id], (err, result) => {
+        if (err) {
+          console.error('Error while executing the query: ', err);
+          res.status(500).send('Error deleting album');
+        } else {
+          res.send('Album deleted successfully');
+        }
+      });
+    }
+  });
+});
+
+
+
 //delete all tables
 app.delete('/:table/:id', (req, res) => {
   const Id = req.params.id;
@@ -191,6 +257,7 @@ app.delete('/:table/:id', (req, res) => {
     }
   });
 });
+
 
 //show posts
 app.get('/:userid/posts', (req, res) => {
@@ -240,6 +307,32 @@ app.post('/:userId/posts', (req, res) => {
         userId: userId
       };
       res.status(201).json(addedPost);
+    }
+  });
+});
+
+//add album
+app.post('/:userId/album', (req, res) => {
+  const userId = req.params.userId;
+  const album = req.body;
+
+  const albumToAdd = {
+    title: album.title,
+    userId: userId
+  };
+
+  connection.query('INSERT INTO albums SET ?', [albumToAdd], (err, result) => {
+    if (err) {
+      console.error('Error while executing the query: ', err);
+      res.status(500).send('Error adding the post');
+    } else {
+      const albumId = result.insertId;
+      const addedAlbum = {
+        id: albumId,
+        title: album.title,
+        userId: userId
+      };
+      res.status(201).json(addedAlbum);
     }
   });
 });
