@@ -172,7 +172,7 @@ function Photos() {
       return (
         <div>
           <h1>Liste des photos</h1>
-          <button id="addPhotosButton" onClick={showFormPhotosClick}>ADD NEW PHOTOS</button>
+          {/* <button id="addPhotosButton" onClick={showFormPhotosClick}>ADD NEW PHOTOS</button>
           {showformPhotos && (
              <form onSubmit={handleSubmit}>
                 <input
@@ -187,10 +187,10 @@ function Photos() {
                 type="checkbox"
                 checked={newPhotoCompleted}
                 onChange={event => setNewPhotoCompleted(event.target.checked)}
-                /> */}
+                /> 
                 <button type="submit">Add</button>
             </form>
-            )}
+            )} */}
           {photos.length === 0 ? (
             <p>no photo found</p>
           ) : (

@@ -473,6 +473,25 @@ app.put('/todosTitle/:Id', (req, res) => {
   );
 });
 
+app.put('/albumsTitle/:Id', (req, res) => {
+  const Id = req.params.Id;
+  const { newTitle  } = req.body;
+  console.log("title ",newTitle );
+
+  connection.query(
+    'UPDATE albums SET title = ? WHERE id = ?',
+    [newTitle , Id],
+    (err, result) => {
+      if (err) {
+        console.error('Error updating album :', err);
+        res.status(500).send('Error updating album');
+      } else {
+        res.sendStatus(200);
+      }
+    }
+  );
+});
+
 
 //update posts
 app.put('/posts/:Id', (req, res) => {

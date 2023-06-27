@@ -129,36 +129,36 @@ function Albums() {
             });  
       }
       
-      // function handleUpdateClick(item){
-      //   setShowformUpdate(true);
-      //   setUpdateAlbumId(item.id);
-      // }
+      function handleUpdateClick(item){
+        setShowformUpdate(true);
+        setUpdateAlbumId(item.id);
+      }
 
-      // function handleSubmitUpdate(event, item) {
-      //   event.preventDefault(); // Prevent page reload
+      function handleSubmitUpdate(event, item) {
+        event.preventDefault(); // Prevent page reload
       
-      //   const newTitle = updateAlbumTitle;
-      //   item.title = newTitle;
-      //   fetch(`http://localhost:3001/albumsTitle/${item.id}`, {
-      //     method: 'PUT',
-      //     headers: {
-      //       'Content-Type': 'application/json'
-      //     },
-      //     body: JSON.stringify({ newTitle })
-      //   })
-      //     .then(response => {
-      //       if (response.ok) {
-      //         handleTitleChange(item.id, newTitle);
-      //         setUpdateAlbumTitle('');
-      //         setShowformUpdate(false); // Hide the update form
-      //       } else {
-      //         throw new Error('Error updating album on server');
-      //       }
-      //     })
-      //     .catch(error => {
-      //       console.error('Error updating album:', error);
-      //     });
-      // }
+        const newTitle = updateAlbumTitle;
+        item.title = newTitle;
+        fetch(`http://localhost:3001/albumsTitle/${item.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ newTitle })
+        })
+          .then(response => {
+            if (response.ok) {
+              handleTitleChange(item.id, newTitle);
+              setUpdateAlbumTitle('');
+              setShowformUpdate(false); // Hide the update form
+            } else {
+              throw new Error('Error updating album on server');
+            }
+          })
+          .catch(error => {
+            console.error('Error updating album:', error);
+          });
+      }
       
       const handleInputChange = (event) => {
         const { value } = event.target;
@@ -166,7 +166,7 @@ function Albums() {
       };
     
       const handleCancel = () => {
-        setShowformUpdate(false);
+        setshowformAlbums(false);
         setUpdateAlbumTitle('');
       };
 
@@ -189,7 +189,8 @@ function Albums() {
                 checked={newAlbumCompleted}
                 onChange={event => setNewAlbumCompleted(event.target.checked)}
                 /> */}
-                <button type="submit">Add</button>
+                <button type="submit">ADD</button>
+                <button onClick={handleCancel}>CANCEL</button>
             </form>
             )}
           {albums.length === 0 ? (
@@ -207,8 +208,8 @@ function Albums() {
                     <Link to={`${album.id}/photos`}>{album.title}</Link>
                   </span>
                   <button onClick={() =>handleDeleteClick(album)}>DELETE</button>
-                  {/* <button onClick={() =>handleUpdateClick(album)}>Update</button> */}
-                  {/* {showformUpdate && updateAlbumId === album.id &&(
+                  <button onClick={() =>handleUpdateClick(album)}>UPDATE</button>
+                  {showformUpdate && updateAlbumId === album.id &&(
                     <form onSubmit={event => handleSubmitUpdate(event, album)}>
 
                     <input
@@ -222,7 +223,7 @@ function Albums() {
                    <button onClick={handleCancel}>CANCEL</button>
 
                     </form>
-                    )} */}
+                    )}
                 </li>
               ))}
             </ul>
