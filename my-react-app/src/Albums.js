@@ -199,11 +199,7 @@ function Albums() {
             <ul>
               {albums.map(album => (
                 <li key={album.id}>
-                  {/* <input
-                    type="text"
-                    // checked={album.completed}
-                    // onChange={() => handleCheckboxChange(album.id, album.completed)}
-                    /> */}
+
                   <span>
                     <Link to={`${album.id}/photos`}>{album.title}</Link>
                   </span>

@@ -13,6 +13,7 @@ import Albums from './Albums';
 import Info from './Info';
 import Comments from "./Comments"
 import Photos from "./Photos"
+import './Style.css';
 
 
 export default function App() {

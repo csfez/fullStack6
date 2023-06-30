@@ -10,8 +10,8 @@ export default function Layout() {
         <>
         <header className="home-container">
             <nav>
-                <ul>
-                    <h1>Welcome {Username}</h1>
+                <ul className="menu">
+                  
                     <li>
                         <Link to={`/users/${Username}/info`}>Infos</Link>
                     </li>
@@ -25,9 +25,10 @@ export default function Layout() {
                         <Link to={`/users/${Username}/albums`}>Albums</Link>
                     </li>
                     <li>
-                        <Link to={"/login"}>Logout</Link>
+                        <Link to={"/"}>Logout</Link>
                     </li>
                 </ul>
+                <h1 >Welcome {Username}</h1>
             </nav>
         </header>
         <Outlet />

@@ -269,7 +269,7 @@ app.get('/:userid/posts', (req, res) => {
       res.status(500).send('Erreur lors de la récupération des informations de l\'utilisateur');
     } else {
       if (rows.length === 0) {
-        res.status(404).send('posts not found');
+        res.status(404).send('posts no found');
       } else {
         const posts = rows.map(post => ({
           id: post.id,
@@ -409,30 +409,67 @@ app.get('/users_password', (req, res) => {
   // });
 // });
 
-
-//show the todos
 app.get('/:userId/todos', (req, res) => {
   const userId = req.params.userId;
+  const query = req.query;
+  let completed = null;
 
-  connection.query('SELECT * FROM todos WHERE userId = ?', [userId], (err, rows) => {
+  if (query.completed === 'true') {
+    completed = 1;
+  } else if (query.completed === 'false') {
+    completed = 0;
+  }
+
+  let sqlQuery = 'SELECT * FROM todos WHERE userId = ?';
+
+  if (completed !== null) {
+    sqlQuery += ' AND completed = ?';
+  }
+
+  connection.query(sqlQuery, [userId, completed], (err, rows) => {
     if (err) {
-      console.error('Erreur lors de l\'exécution de la requête :', err);
-      res.status(500).send('Erreur lors de la récupération des todos');
+      console.error('Error while executing the query:', err);
+      res.status(500).send('Error retrieving todos');
     } else {
       if (rows.length === 0) {
-        res.status(404).send('Aucun todos trouvé');
+        res.status(404).send('No todos found');
       } else {
         const todos = rows.map(todo => ({
           id: todo.id,
           title: todo.title,
-          completed: todo.completed
+          completed: (todo.completed===1?true:false)
         }));
         res.json(todos);
       }
     }
-    // connection.end();
   });
 });
+
+//show the todos
+// app.get('/:userId/todos', (req, res) => {
+//   const userId = req.params.userId;
+//   console.log("todos regular");
+//   connection.query('SELECT * FROM todos WHERE userId = ?', [userId], (err, rows) => {
+//     if (err) {
+//       console.error('Erreur lors de l\'exécution de la requête :', err);
+//       res.status(500).send('Erreur lors de la récupération des todos');
+//     } else {
+//       if (rows.length === 0) {
+//         res.status(404).send('Aucun todos trouvé');
+//       } else {
+//         const todos = rows.map(todo => ({
+//           id: todo.id,
+//           title: todo.title,
+//           completed: todo.completed
+//         }));
+//         res.json(todos);
+//       }
+//     }
+//     // connection.end();
+//   });
+// });
+
+
 
 //update todos completed
 app.put('/todos/:Id', (req, res) => {
